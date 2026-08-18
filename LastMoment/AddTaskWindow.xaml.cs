@@ -19,9 +19,12 @@ namespace LastMoment
     /// </summary>
     public partial class AddTaskWindow : Window
     {
-        public AddTaskWindow()
+        MainWindow mainWindow;
+        public AddTaskWindow(MainWindow mainWindow)
         {
             InitializeComponent();
+            this.mainWindow = mainWindow;
+            this.Owner = mainWindow;
         }
         private void IsDigital(object sender, TextCompositionEventArgs e)
         {
@@ -39,9 +42,27 @@ namespace LastMoment
         private void SaveAndClose(object sender, RoutedEventArgs e)
         {
             string description = Description.Text;
-            string date = Date.Text;
-            string importance = Importance.Text;
-            string days = Days.Text;
+            if (Date.SelectedDate == null)
+            {
+                MessageBox.Show("Выберите срок сдачи задачи");
+                return;
+            }
+            DateTime date = Date.SelectedDate.Value;
+            int importance = int.Parse(Importance.Text);
+            int days = int.Parse(Days.Text);
+            Task task = new Task(description, date, importance, days);
+            try
+            {
+                TaskNode taskNode = mainWindow.taskList.AddTask(task, out int indexInsert);
+                ListBoxItem taskItem = new ListBoxItem();
+                taskItem.Tag = taskNode;
+                taskItem.Content = taskNode.GetDescription();
+                mainWindow.tasks.Items.Insert(indexInsert, taskItem);
+                this.Close();
+            }
+            catch (Exception ex) {
+                MessageBox.Show(ex.Message);
+            }
         }
     }
 }

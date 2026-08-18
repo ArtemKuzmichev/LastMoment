@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LastMoment"
         mc:Ignorable="d"
-        Title="LastMoment" Height="540" Width="960">
+        Title="LastMoment" Height="540" Width="960"
+        Closing="SaveAndCloseWindow">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="0.3*" />
@@ -20,7 +21,8 @@
             <TextBlock Grid.Column="1" Text="Список задач" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="50" />
             <Button Grid.Column="2" Content="Добавить задачу" Margin="0,80,40,10" FontSize="14" Click="AddTask"/>
         </Grid>
-
-
+        <ListBox x:Name="tasks" Grid.Row="1" MouseDoubleClick="OpenTask">
+        </ListBox>
+        
     </Grid>
 </Window>

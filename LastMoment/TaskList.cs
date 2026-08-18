@@ -2,34 +2,40 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace LastMoment
 {
-    class TaskList
+    public class TaskNode
     {
-        private class TaskNode
+        private Task task;
+        private TaskNode next = null;
+        private TaskNode prev = null;
+        public TaskNode(Task task)
         {
-            private Task task;
-            private TaskNode next = null;
-            private TaskNode prev = null;
-            public TaskNode(Task task)
-            {
-                this.task = task;
-            }
-            public string GetDescription() { return task.GetDescription(); }
-            public DateTime GetDeadline() { return task.GetDeadline(); }
-            public DateTime GetStartDateWork() { return task.GetStartDateWork(); }
-            public DateTime GetEndDateWork() { return task.GetEndDateWork(); }
-            public int GetImportance() { return task.GetImportance(); }
-            public int GetDays() { return task.GetDays(); }
-            public TaskNode GetNext() { return next; }
-            public TaskNode GetPrev() { return prev; }
-            public void SetStartDateWork(DateTime startDateWork) { task.SetStartDateWork(startDateWork); }
-            public void SetEndDateWork(DateTime endDateWork) { task.SetEndDateWork(endDateWork); }
-            public void SetNext(TaskNode next) { this.next = next; }
-            public void SetPrev(TaskNode prev) { this.prev = prev; }
+            this.task = task;
         }
+        public string GetDescription() { return task.GetDescription(); }
+        public DateTime GetDeadline() { return task.GetDeadline(); }
+        public DateTime GetStartDateWork() { return task.GetStartDateWork(); }
+        public DateTime GetEndDateWork() { return task.GetEndDateWork(); }
+        public int GetImportance() { return task.GetImportance(); }
+        public int GetDays() { return task.GetDays(); }
+        public TaskNode GetNext() { return next; }
+        public TaskNode GetPrev() { return prev; }
+        public void SetStartDateWork(DateTime startDateWork) { task.SetStartDateWork(startDateWork); }
+        public void SetEndDateWork(DateTime endDateWork) { task.SetEndDateWork(endDateWork); }
+        public void SetNext(TaskNode next) { this.next = next; }
+        public void SetPrev(TaskNode prev) { this.prev = prev; }
+        public string ToJSON()
+        {
+            return task.ToJSON();
+        }
+    }
+    public class TaskList
+    {
         private TaskNode header = null;
 
         private void DragLeft(TaskNode prev, TaskNode curr)
@@ -46,8 +52,9 @@ namespace LastMoment
             }
         }
         //добавление новой задачи
-        public void AddTask(Task newTask)
+        public TaskNode AddTask(Task newTask, out int indexInsert)
         {
+            indexInsert = 0;
             TaskNode task = new TaskNode(newTask); 
             if (header != null) //если список не пуст, то хотя бы одна задача будет "слева" или "справа" в очереди на выполнение
             {
@@ -55,16 +62,18 @@ namespace LastMoment
                 TaskNode prev = null;
                 int days = 0;
                 while (next != null && task.GetDeadline() >= next.GetDeadline()) //ищем задачу (назовем следующей),
-                {                                                                                        //у которой дедлайн будет правее
+                {                                                                //у которой дедлайн будет правее
                     days += next.GetDays(); //считаем количество дней, которые уже заняты
                     prev = next;
                     next = next.GetNext();
+                    indexInsert++;
                 }
                 while (prev != null && prev.GetDeadline() == task.GetDeadline() && prev.GetImportance() < task.GetImportance())
                 {
                     days -= prev.GetDays();
                     next = prev;
                     prev = prev.GetPrev();
+                    indexInsert--;
                 }
 
                 if (DateTime.Today > header.GetStartDateWork()) //убираем дни работы до сегодня
@@ -131,8 +140,94 @@ namespace LastMoment
             }
             else
             {
+                if ((task.GetStartDateWork() - DateTime.Today).Days < 0)
+                {
+                    throw new Exception("Слишком много дней на выполнение задачи");
+                }
                 header = task;
             }
+            return task;
+        }
+        public TaskNode FromJSON(string json)
+        {
+            try
+            {
+                List<Task> tasks = JsonSerializer.Deserialize<List<Task>>(json);
+                if (tasks != null && tasks.Count > 0)
+                {
+                    TaskNode lastAdd = null;
+                    foreach (Task task in tasks)
+                    {
+                        TaskNode node = new TaskNode(task);
+                        if (header == null)
+                        {
+                            lastAdd = node;
+                            header = node;
+                        }
+                        else
+                        {
+                            lastAdd.SetNext(node);
+                            node.SetPrev(lastAdd);
+                            lastAdd = node;
+                        }
+                    }
+                }
+                return header;
+            }
+            catch(JsonException)
+            {
+                throw;
+            }
+        }
+        public string ToJSON()
+        {
+            if (header == null) { return "[]"; }
+            TaskNode node = header;
+            string json = "[";
+            while (node.GetNext() != null)
+            {
+                json += node.ToJSON() + ",\n";
+                node = node.GetNext();
+            }
+            json += node.ToJSON();
+            json += "]";
+            return json;
+        }
+        public void ShowTask()
+        {
+            if (header == null) { return; }
+
+        }
+        public bool DeleteTask(TaskNode node)
+        {
+            if (header == null || node == null) { return false; }
+            TaskNode prev = node.GetPrev();
+            TaskNode next = node.GetNext();
+            
+            if (prev != null)
+            {
+                prev.SetNext(next);
+                if (next != null)
+                {
+                    next.SetPrev(prev);
+                }
+            }
+            else
+            {
+                if (next != null)
+                {
+                    next.SetPrev(null);
+                    header = next;
+                    node.SetNext(null);
+                }
+                else
+                {
+                    header = null;
+                }
+            }
+            node.SetPrev(null);
+            node.SetNext(null);
+            return true;
         }
     }
 }
