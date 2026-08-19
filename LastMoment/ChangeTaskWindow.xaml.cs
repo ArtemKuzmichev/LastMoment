@@ -56,6 +56,14 @@ namespace LastMoment
                 MessageBox.Show("Ошибка удаления задачи", "Ошибка удаления задачи", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
+            foreach (ListBoxItem item in mainWindow.tasks.Items)
+            {
+                if (item.Equals(taskItem))
+                {
+                    break;
+                }
+                item.Content = ((TaskNode)item.Tag).GetDescription() + "    Дата начала: " + ((TaskNode)item.Tag).GetStartDateWork().ToString("dd-MM-yyyy");
+            }
             mainWindow.tasks.Items.Remove(taskItem);
             this.Close();
         }

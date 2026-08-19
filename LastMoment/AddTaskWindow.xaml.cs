@@ -56,8 +56,16 @@ namespace LastMoment
                 TaskNode taskNode = mainWindow.taskList.AddTask(task, out int indexInsert);
                 ListBoxItem taskItem = new ListBoxItem();
                 taskItem.Tag = taskNode;
-                taskItem.Content = taskNode.GetDescription();
+                taskItem.Content = taskNode.GetDescription() + "    Дата начала: " + taskNode.GetStartDateWork().ToString("dd-MM-yyyy");
                 mainWindow.tasks.Items.Insert(indexInsert, taskItem);
+                foreach (ListBoxItem item in mainWindow.tasks.Items)
+                {
+                    if (item.Equals(taskItem))
+                    {
+                        break;
+                    }
+                    item.Content = ((TaskNode) item.Tag).GetDescription() + "    Дата начала: " + ((TaskNode)item.Tag).GetStartDateWork().ToString("dd-MM-yyyy");
+                }
                 this.Close();
             }
             catch (Exception ex) {

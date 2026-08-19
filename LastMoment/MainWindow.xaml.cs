@@ -38,7 +38,7 @@ namespace LastMoment
                     {
                         ListBoxItem item = new ListBoxItem();
                         item.Tag = curr;
-                        item.Content = curr.GetDescription();
+                        item.Content = curr.GetDescription() + "    Дата начала: " + curr.GetStartDateWork().ToString("dd-MM-yyyy");
                         tasks.Items.Insert(indexInsert, item);
                         curr = curr.GetNext();
                         indexInsert++;
