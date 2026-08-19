@@ -42,8 +42,8 @@ namespace LastMoment
         {
             int drag = 0;
             
-            while (prev != null && curr.GetStartDateWork() <= prev.GetEndDateWork()) //пока возникает "нахлест", сдвигаем
-            {
+            while (prev != null && prev.GetEndDateWork() >= curr.GetStartDateWork()) //пока возникает "нахлест", сдвигаем время
+            {                                                                        //начала и окончания задачи на более ранний срок
                 drag = (prev.GetEndDateWork() - curr.GetStartDateWork().AddDays(-1)).Days;
                 prev.SetStartDateWork(prev.GetStartDateWork().AddDays(-drag));
                 prev.SetEndDateWork(prev.GetEndDateWork().AddDays(-drag));
@@ -51,6 +51,24 @@ namespace LastMoment
                 curr = curr.GetPrev();
             }
         }
+        private void DragRight(TaskNode prev, TaskNode curr)
+        {
+            int drag;
+            while (prev != null && !prev.GetEndDateWork().Equals(prev.GetDeadline().AddDays(-1)))
+            {
+                drag = 0;
+                if (prev.GetDeadline() > curr.GetStartDateWork())
+                {
+                    drag = (prev.GetDeadline() - curr.GetStartDateWork()).Days;
+                }
+                prev.SetEndDateWork(prev.GetDeadline().AddDays(-(1 + drag)));
+                prev.SetStartDateWork(prev.GetEndDateWork().AddDays(-(prev.GetDays() - 1)));
+                curr = prev;
+                prev = prev.GetPrev();
+            }
+            
+        }
+
         //добавление новой задачи
         public TaskNode AddTask(Task newTask, out int indexInsert)
         {
@@ -210,7 +228,18 @@ namespace LastMoment
                 if (next != null)
                 {
                     next.SetPrev(prev);
+                    DragRight(prev, next);
                 }
+                else
+                {
+                    prev.SetEndDateWork(prev.GetDeadline().AddDays(-1));
+                    prev.SetStartDateWork(prev.GetDeadline().AddDays(-prev.GetDays()));
+                    if (prev.GetPrev() != null)
+                    {
+                        DragRight(prev.GetPrev(), prev);
+                    }
+                }
+                
             }
             else
             {
